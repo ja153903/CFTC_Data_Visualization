@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load staticfiles%}
+<head>
+	<meta charset="utf-8">
+	<meta name="Author" content="Jaime Abbariao">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>Armada Local Test</title>
+
+	<link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.15/c3.min.css">
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.15/c3.min.js"></script>
+
+	<script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+	<script src="https://unpkg.com/vue"></script>
+</head>
+<body>
+<div class="container-fluid">
+	<!-- Nav tabs -->
+	<ul class="nav nav-tabs" role="tablist">
+	  <li class="nav-item active">
+	    <a class="nav-link" data-toggle="tab" href="#managedMoney" role="tab">Managed Money</a>
+	  </li>
+	  <li class="nav-item">
+	    <a class="nav-link" data-toggle="tab" href="#prodMerc" role="tab">Producer/Merchant/Processor/User</a>
+	  </li>
+	  <li class="nav-item">
+	    <a class="nav-link" data-toggle="tab" href="#swapDealers" role="tab">Swap Dealers</a>
+	  </li>
+	  <li class="nav-item">
+	    <a class="nav-link" data-toggle="tab" href="#otherReportables" role="tab">Other Reportables</a>
+	  </li>
+	  <li>
+	  	<a class="nav-link" data-toggle="tab" href="#totalReportables" role="tab"> Total Reportables</a>
+	  </li>
+	</ul>
+
+	<!-- Tab panes -->
+	<div class="tab-content">
+	  <div class="tab-pane active" id="managedMoney" role="tabpanel">
+	  	<h1>Managed Money Area Chart</h1>
+		<div id="managedMoneyAreaChart"></div>
+		<button class="btn btn-default" id="mmtoStackedBar">To Stacked Bar</button>
+		<button class="btn btn-default" id="mmtoAreaChart">To Area Chart</button>
+	  </div>
+	  <div class="tab-pane" id="prodMerc" role="tabpanel">
+	  	<h1>Producer/Merchant/Processor/User Area Chart</h1>
+		<div id="prodMercAreaChart"></div>
+		<button class="btn btn-default" id="pmtoStackedBar">To Stacked Bar</button>
+		<button class="btn btn-default" id="pmtoAreaChart">To Area Chart</button>
+	  </div>
+	  <div class="tab-pane" id="swapDealers" role="tabpanel">
+	  	<h1>Swap Dealers Area Chart</h1>
+		<div id="swapAreaChart"></div>
+		<button class="btn btn-default" id="stoStackedBar">To Stacked Bar</button>
+		<button class="btn btn-default" id="stoAreaChart">To Area Chart</button>
+	  </div>
+	  <div class="tab-pane" id="otherReportables" role="tabpanel">
+	  	<h1>Other Reportables Area Chart</h1>
+		<div id="otherReptAreaChart"></div>
+		<button class="btn btn-default" id="ortoStackedBar">To Stacked Bar</button>
+		<button class="btn btn-default" id="ortoAreaChart">To Area Chart</button>
+	  </div>
+	  <div class="tab-pane" id="totalReportables" role="tabpanel">
+		<h1>Total Reportables Area Chart</h1>
+		<div id="totalReptAreaChart"></div>
+		<button class="btn btn-default" id="trtoStackedBar">To Stacked Bar</button>
+		<button class="btn btn-default" id="trtoAreaChart">To Area Chart</button>
+	  </div>
+	</div>
+	
+	<!--This creates the managed money area chart-->
+	<script type="text/javascript">
+		// Load the data into the script
+		var mm_agriculture_data = {{ agriculture_mm | safe }};
+		var mm_energy_data = {{ energy_mm | safe }};
+		var mm_metals_data = {{ metals_mm | safe }};
+		var mm_total_data = {{ total_mm | safe }}
+
+		// They should all have the same range of dates
+		var dates = Object.keys(mm_total_data);
+
+		// Return a date that javascript can read
+		var parseTheDate = function(date){ return new Date(date); }
+		
+		dates.sort(function(a, b){
+			return new Date(a) - new Date(b);
+		});
+
+		var parsedDates = ['Dates'];
+
+		var managed_money_agriculture = ['Agriculture'];
+		var managed_money_energy = ['Energy'];
+		var managed_money_metals = ['Metals'];
+		var managed_money_total = ['Total'];
+
+		dates.forEach(function(date){
+			parsedDates.push(parseTheDate(date));
+			managed_money_agriculture.push(+mm_agriculture_data[date]);
+			managed_money_energy.push(+mm_energy_data[date]);
+			managed_money_metals.push(+mm_metals_data[date]);
+			managed_money_total.push(+mm_total_data[date]);
+		});
+
+		var managed_money_chart = c3.generate({
+			bindto: '#managedMoneyAreaChart',
+			padding:{
+				right: 30
+			},
+			data: {
+				columns: [
+					parsedDates,
+					managed_money_agriculture,
+					managed_money_energy,
+					managed_money_metals,
+					managed_money_total
+				],
+				x : 'Dates',
+				type: 'area-spline',
+				groups: [['Agriculture', 'Energy', 'Metals', 'Total']],
+				colors: {
+					Agriculture: 'steelBlue',
+					Energy: 'red',
+					Metals: 'green',
+					Total: 'black'
+				}
+			},
+			axis: {
+				x: {
+					type: "timeseries",
+					tick: {
+						format: "%m/%d/%Y"
+					}
+				}
+			},
+			grid: {
+				x: {
+					show: true
+				},
+				y: {
+					show: true
+				}
+			},
+			zoom: {
+				enabled: true,
+				rescale: true
+			},
+			point:{
+				show: false
+			},
+			legend: {
+				show: false
+			}
+		});
+
+		$("#mmtoStackedBar").click(function(d){
+			managed_money_chart.transform('bar');
+		});
+
+		$("#mmtoAreaChart").click(function(d){
+			managed_money_chart.transform('area-spline');
+		});
+
+
+	</script>
+	
+	<!--This creates the prod merc area chart-->
+	<script type="text/javascript">
+		// Load the data into the script
+		var pm_agriculture_data = {{ agriculture_pm | safe }};
+		var pm_energy_data = {{ energy_pm | safe }};
+		var pm_metals_data = {{ metals_pm | safe }};
+		var pm_total_data = {{ total_pm | safe }}
+
+		// They should all have the same range of dates
+		var dates = Object.keys(pm_total_data);
+
+		// Return a date that javascript can read
+		var parseTheDate = function(date){ return new Date(date); }
+		
+		dates.sort(function(a, b){
+			return new Date(a) - new Date(b);
+		});
+
+		var parsedDates = ['Dates'];
+
+		var prod_merc_agriculture = ['Agriculture'];
+		var prod_merc_energy = ['Energy'];
+		var prod_merc_metals = ['Metals'];
+		var prod_merc_total = ['Total'];
+
+		dates.forEach(function(date){
+			parsedDates.push(parseTheDate(date));
+			prod_merc_agriculture.push(+pm_agriculture_data[date]);
+			prod_merc_energy.push(+pm_energy_data[date]);
+			prod_merc_metals.push(+pm_metals_data[date]);
+			prod_merc_total.push(+pm_total_data[date]);
+		});
+
+		var prod_merc_chart = c3.generate({
+			bindto: '#prodMercAreaChart',
+			padding:{
+				right: 30
+			},
+			data: {
+				columns: [
+					parsedDates,
+					prod_merc_agriculture,
+					prod_merc_energy,
+					prod_merc_metals,
+					prod_merc_total,
+				],
+				x : 'Dates',
+				type: 'area-spline',
+				groups: [['Agriculture', 'Energy', 'Metals', 'Total']],
+				colors:{
+					Agriculture: 'steelBlue',
+					Energy: 'red',
+					Metals: 'green',
+					Total: 'black'
+				}
+			},
+			axis: {
+				x: {
+					type: "timeseries",
+					tick: {
+						format: "%m/%d/%Y"
+					}
+				}
+			},
+			grid: {
+				x: {
+					show: true
+				},
+				y: {
+					show: true
+				}
+			},
+			zoom: {
+				enabled: true,
+				rescale: true
+			},
+			point:{
+				show: false
+			},
+			legend: {
+				show: false
+			}
+		});
+
+		$("#pmtoStackedBar").click(function(d){
+			prod_merc_chart.transform('bar');
+		});
+
+		$("#pmtoAreaChart").click(function(d){
+			prod_merc_chart.transform('area-spline');
+		});
+
+
+	</script>
+
+	<!--This creates the swap area chart-->
+	<script type="text/javascript">
+		// Load the data into the script
+		var s_agriculture_data = {{ agriculture_s | safe }};
+		var s_energy_data = {{ energy_s | safe }};
+		var s_metals_data = {{ metals_s | safe }};
+		var s_total_data = {{ total_s | safe }}
+
+		// They should all have the same range of dates
+		var dates = Object.keys(s_total_data);
+
+		// Return a date that javascript can read
+		var parseTheDate = function(date){ return new Date(date); }
+		
+		dates.sort(function(a, b){
+			return new Date(a) - new Date(b);
+		});
+
+		var parsedDates = ['Dates'];
+
+		var swap_agriculture = ['Agriculture'];
+		var swap_energy = ['Energy'];
+		var swap_metals = ['Metals'];
+		var swap_total = ['Total'];
+
+		dates.forEach(function(date){
+			parsedDates.push(parseTheDate(date));
+			swap_agriculture.push(+s_agriculture_data[date]);
+			swap_energy.push(+s_energy_data[date]);
+			swap_metals.push(+s_metals_data[date]);
+			swap_total.push(+s_total_data[date]);
+		});
+
+		var swap_chart = c3.generate({
+			bindto: '#swapAreaChart',
+			padding:{
+				right: 30
+			},
+			data: {
+				columns: [
+					parsedDates,
+					swap_agriculture,
+					swap_energy,
+					swap_metals,
+					swap_total
+				],
+				x : 'Dates',
+				type: 'area-spline',
+				groups: [['Agriculture', 'Energy', 'Metals', 'Total']],
+				colors:{
+					Agriculture: 'steelBlue',
+					Energy: 'red',
+					Metals: 'green',
+					Total: 'black'
+				}
+			},
+			axis: {
+				x: {
+					type: "timeseries",
+					tick: {
+						format: "%m/%d/%Y"
+					}
+				}
+			},
+			grid: {
+				x: {
+					show: true
+				},
+				y: {
+					show: true
+				}
+			},
+			zoom: {
+				enabled: true,
+				rescale: true
+			},
+			point:{
+				show: false
+			},
+			legend: {
+				show: false
+			}
+		});
+
+		$("#stoStackedBar").click(function(d){
+			swap_chart.transform('bar');
+		});
+
+		$("#stoAreaChart").click(function(d){
+			swap_chart.transform('area-spline');
+		});
+
+
+	</script>
+
+	<!--This creates the other rept area chart-->
+	<script type="text/javascript">
+		// Load the data into the script
+		var or_agriculture_data = {{ agriculture_or | safe }};
+		var or_energy_data = {{ energy_or | safe }};
+		var or_metals_data = {{ metals_or | safe }};
+		var or_total_data = {{ total_or | safe }}
+
+		// They should all have the same range of dates
+		var dates = Object.keys(or_total_data);
+
+		// Return a date that javascript can read
+		var parseTheDate = function(date){ return new Date(date); }
+		
+		dates.sort(function(a, b){
+			return new Date(a) - new Date(b);
+		});
+
+		var parsedDates = ['Dates'];
+
+		var other_rept_agriculture = ['Agriculture'];
+		var other_rept_energy = ['Energy'];
+		var other_rept_metals = ['Metals'];
+		var other_rept_total = ['Total'];
+
+		dates.forEach(function(date){
+			parsedDates.push(parseTheDate(date));
+			other_rept_agriculture.push(+or_agriculture_data[date]);
+			other_rept_energy.push(+or_energy_data[date]);
+			other_rept_metals.push(+or_metals_data[date]);
+			other_rept_total.push(+or_total_data[date]);
+		});
+
+		var other_rept_chart = c3.generate({
+			bindto: '#otherReptAreaChart',
+			padding:{
+				right: 30
+			},
+			data: {
+				columns: [
+					parsedDates,
+					other_rept_agriculture,
+					other_rept_energy,
+					other_rept_metals,
+					other_rept_total
+				],
+				x : 'Dates',
+				type: 'area-spline',
+				groups: [['Agriculture', 'Energy', 'Metals', 'Total']],
+				colors:{
+					Agriculture: 'steelBlue',
+					Energy: 'red',
+					Metals: 'green',
+					Total: 'black'
+				}
+			},
+			axis: {
+				x: {
+					type: "timeseries",
+					tick: {
+						format: "%m/%d/%Y"
+					}
+				}
+			},
+			grid: {
+				x: {
+					show: true
+				},
+				y: {
+					show: true
+				}
+			},
+			zoom: {
+				enabled: true,
+				rescale: true
+			},
+			point:{
+				show: false
+			},
+			legend: {
+				show: false
+			}
+		});
+
+		$("#ortoStackedBar").click(function(d){
+			other_rept_chart.transform('bar');
+		});
+
+		$("#ortoAreaChart").click(function(d){
+			other_rept_chart.transform('area-spline');
+		});
+
+
+	</script>
+
+	<!--This creates the total rept area chart-->
+	<script type="text/javascript">
+		// Load the data into the script
+		var tr_agriculture_data = {{ agriculture_tr | safe }};
+		var tr_energy_data = {{ energy_tr | safe }};
+		var tr_metals_data = {{ metals_tr | safe }};
+		var tr_total_data = {{ total_tr | safe }}
+
+		// They should all have the same range of dates
+		var dates = Object.keys(tr_total_data);
+
+		// Return a date that javascript can read
+		var parseTheDate = function(date){ return new Date(date); }
+		
+		dates.sort(function(a, b){
+			return new Date(a) - new Date(b);
+		});
+
+		var parsedDates = ['Dates'];
+
+		var total_rept_agriculture = ['Agriculture'];
+		var total_rept_energy = ['Energy'];
+		var total_rept_metals = ['Metals'];
+		var total_rept_total = ['Total'];
+
+		dates.forEach(function(date){
+			parsedDates.push(parseTheDate(date));
+			total_rept_agriculture.push(+tr_agriculture_data[date]);
+			total_rept_energy.push(+tr_energy_data[date]);
+			total_rept_metals.push(+tr_metals_data[date]);
+			total_rept_total.push(+tr_total_data[date]);
+		});
+
+		var total_rept_chart = c3.generate({
+			bindto: '#totalReptAreaChart',
+			padding:{
+				right: 30
+			},
+			data: {
+				columns: [
+					parsedDates,
+					total_rept_agriculture,
+					total_rept_energy,
+					total_rept_metals,
+					total_rept_total
+				],
+				x : 'Dates',
+				type: 'area-spline',
+				groups: [['Agriculture', 'Energy', 'Metals', 'Total']],
+				colors:{
+					Agriculture: 'steelBlue',
+					Energy: 'red',
+					Metals: 'green',
+					Total: 'black'
+				}
+			},
+			axis: {
+				x: {
+					type: "timeseries",
+					tick: {
+						format: "%m/%d/%Y"
+					}
+				}
+			},
+			grid: {
+				x: {
+					show: true
+				},
+				y: {
+					show: true
+				}
+			},
+			zoom: {
+				enabled: true,
+				rescale: true
+			},
+			point:{
+				show: false
+			},
+			legend: {
+				show: false
+			}
+		});
+
+		$("#trtoStackedBar").click(function(d){
+			total_rept_chart.transform('bar');
+		});
+
+		$("#trtoAreaChart").click(function(d){
+			total_rept_chart.transform('area-spline');
+		});
+
+
+	</script>
+</div>
+</body>
+</html>
